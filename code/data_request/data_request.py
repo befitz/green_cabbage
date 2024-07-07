@@ -7,6 +7,7 @@ from ib_insync import *
 import datetime
 import time
 import pandas as pd
+import os
 
 
 
@@ -117,7 +118,7 @@ def ib__historical_bars_request(
 	# print(dict__conn['app'].isConnected())
 
 	# queryTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-	queryTime = time.strftime('%Y%m%d %H:%M:%S')
+	# queryTime = time.strftime('%Y%m%d %H:%M:%S')
 	try:
 		bars = dict__conn['app'].reqHistoricalData(
 		        contract=contract,
@@ -133,18 +134,54 @@ def ib__historical_bars_request(
 
 		dict__proc['dat']['result'] = util.df(bars)
 
-
 		# print(dict__proc['dat']['result'].head())
-
+		dict__proc, dict__log = _outupt_data(
+			dict__proc=dict__proc,
+			dict__log=dict__log,
+			)
 
 	except Exception as e:
 		print('Unable to gather historical bars')
 		print(str(e))
 
 
+
 	return dict__proc, dict__conn, dict__log
 
 
+
+
+def _outupt_data(
+	dict__proc,
+	dict__log
+	):
+	
+
+	s__duration = '_'.join(dict__proc['input_args']['historical_bars__duration']['value'].split(' '))
+	s__bars = '_'.join(dict__proc['input_args']['historical_bars__barSize']['value'].split(' '))
+	s__time = datetime.datetime.now().strftime('%Y%m%d')
+
+	fn__output = dict__proc['project_name'] + '__' + \
+		dict__proc['input_args']['request_type']['value'] + '_' + \
+		s__duration + '_by_' + s__bars + '_bars__' + s__time + '.csv'
+
+
+
+	if 'result' in dict__proc['dat'].keys():
+		try:
+			dict__proc['dat']['result'].to_csv(
+				os.path.join(
+					dict__proc['cfg']['dir__dat'],
+					fn__output),
+				index=False,
+				)
+		except Exception as e:
+			print(str(e))
+	else:
+		dict__proc['I__flag'] = True
+		print('results not avail.')
+
+	return dict__proc, dict__log
 
 
 
